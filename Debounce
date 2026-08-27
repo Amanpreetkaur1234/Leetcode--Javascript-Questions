@@ -1,0 +1,18 @@
+/**
+ * @param {Function} fn
+ * @param {number} t
+ * @return {Function}
+ */
+var debounce = function(fn, t) {
+    let timerId;
+
+    return function (...args) {
+        // Cancel the previously scheduled function call
+        clearTimeout(timerId);
+
+        // Schedule a new function call
+        timerId = setTimeout(() => {
+            fn(...args);
+        }, t);
+    };
+};

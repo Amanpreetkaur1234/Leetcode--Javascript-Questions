@@ -1,0 +1,65 @@
+/**
+ * @param {number} key
+ * @param {number} value
+ * @param {number} duration
+ * @return {boolean}
+ */
+
+var TimeLimitedCache = function() {
+    this.cache = new Map();
+};
+
+TimeLimitedCache.prototype.set = function(key, value, duration) {
+    const now = Date.now();
+
+    // Check if key exists and is not expired
+    const exists =
+        this.cache.has(key) &&
+        this.cache.get(key).expireTime > now;
+
+    // Store new value and expiration time
+    this.cache.set(key, {
+        value: value,
+        expireTime: now + duration
+    });
+
+    return exists;
+};
+
+/**
+ * @param {number} key
+ * @return {number}
+ */
+TimeLimitedCache.prototype.get = function(key) {
+    const now = Date.now();
+
+    if (!this.cache.has(key)) {
+        return -1;
+    }
+
+    const data = this.cache.get(key);
+
+    // Check if expired
+    if (data.expireTime <= now) {
+        this.cache.delete(key);
+        return -1;
+    }
+
+    return data.value;
+};
+
+/**
+ * @return {number}
+ */
+TimeLimitedCache.prototype.count = function() {
+    const now = Date.now();
+
+    // Remove expired keys
+    for (const [key, data] of this.cache) {
+        if (data.expireTime <= now) {
+            this.cache.delete(key);
+        }
+    }
+
+    return this.cache.size;
+};

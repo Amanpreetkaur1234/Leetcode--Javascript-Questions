@@ -1,0 +1,28 @@
+/**
+ * @param {Function} fn
+ * @return {Function}
+ */
+var memoize = function(fn) {
+    const cache = new Map();
+    const resultKey = Symbol("result");
+
+    return function(...args) {
+        let node = cache;
+
+        for (const arg of args) {
+            if (!node.has(arg)) {
+                node.set(arg, new Map());
+            }
+            node = node.get(arg);
+        }
+
+        if (node.has(resultKey)) {
+            return node.get(resultKey);
+        }
+
+        const result = fn(...args);
+        node.set(resultKey, result);
+
+        return result;
+    };
+};

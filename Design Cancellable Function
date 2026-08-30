@@ -1,0 +1,64 @@
+/**
+ * @param {Generator} generator
+ * @return {[Function, Promise]}
+ */
+var cancellable = function (generator) {
+    let cancelled = false;
+    let finished = false;
+
+    let resolvePromise, rejectPromise;
+
+    const promise = new Promise((resolve, reject) => {
+        resolvePromise = resolve;
+        rejectPromise = reject;
+    });
+
+    function run(method, value) {
+        if (finished) return;
+
+        let result;
+
+        try {
+            result = generator[method](value);
+        } catch (error) {
+            finished = true;
+            rejectPromise(error);
+            return;
+        }
+
+        // Generator has finished
+        if (result.done) {
+            finished = true;
+            resolvePromise(result.value);
+            return;
+        }
+
+        // Wait for the yielded promise
+        Promise.resolve(result.value).then(
+            (value) => {
+                if (!cancelled) {
+                    run("next", value);
+                }
+            },
+            (error) => {
+                if (!cancelled) {
+                    run("throw", error);
+                }
+            }
+        );
+    }
+
+    // Start the generator
+    run("next");
+
+    const cancel = () => {
+        if (finished || cancelled) return;
+
+        cancelled = true;
+
+        // Throw "Cancelled" into the generator
+        run("throw", "Cancelled");
+    };
+
+    return [cancel, promise];
+};
